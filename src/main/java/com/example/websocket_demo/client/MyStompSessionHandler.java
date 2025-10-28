@@ -23,7 +23,6 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
     public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
 
         System.out.println("Client Connected");
-        session.send("/app/connect", username);
 
         // Subscribe to the /topic/messages topic to receive messages from the server
         session.subscribe("/topic/messages", new StompFrameHandler() {
@@ -70,6 +69,7 @@ public class MyStompSessionHandler extends StompSessionHandlerAdapter {
             }
         });
         System.out.println("Client subscribed to /topic/users");
+        session.send("/app/connect", username);
         session.send("/app/request-users", "");
     }
 

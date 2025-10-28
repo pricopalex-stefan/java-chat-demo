@@ -1,11 +1,10 @@
 package com.example.websocket_demo.client;
-
 import com.example.websocket_demo.Message;
 
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -15,15 +14,17 @@ public class ClientGUI extends JFrame implements MessageListener {
     private JPanel connectedUsersPanel, messagePanel;
     private MyStompClient myStompClient;
     private String username;
+    private JScrollPane scrollPane;
 
     public ClientGUI(String username) throws ExecutionException, InterruptedException {
-        super("User " + username);
+        super("Chat-App Client");
         this.username = username;
         myStompClient = new MyStompClient(this, username);
 
         setSize(1280, 860);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        setResizable(false);
         // confirm popup before closing the app
         addWindowListener(new WindowAdapter() {
             @Override
@@ -36,6 +37,14 @@ public class ClientGUI extends JFrame implements MessageListener {
                 }
             }
         });
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                updateMessageSize();
+            }
+        });
+
         getContentPane().setBackground(Utilities.PRIMARY_COLOR);
         addGuiComponents();
     }
@@ -72,7 +81,20 @@ public class ClientGUI extends JFrame implements MessageListener {
         messagePanel = new JPanel();
         messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
         messagePanel.setBackground(Utilities.TRANSPARENT_COLOR);
-        chatPanel.add(messagePanel, BorderLayout.CENTER);
+
+        scrollPane = new JScrollPane(messagePanel);
+        scrollPane.setBackground(Utilities.TRANSPARENT_COLOR);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.getViewport().addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                revalidate();
+                repaint();
+            }
+        });
+
+        chatPanel.add(scrollPane, BorderLayout.CENTER);
 
         JPanel inputPanel = new JPanel();
         inputPanel.setLayout(new BorderLayout());
@@ -109,18 +131,23 @@ public class ClientGUI extends JFrame implements MessageListener {
         // panel that holds chat messages and input area
         JPanel chatMessage = new JPanel();
         chatMessage.setBackground(Utilities.TRANSPARENT_COLOR);
-        chatMessage.setLayout(new BoxLayout(chatMessage, BoxLayout.Y_AXIS));
+        chatMessage.setLayout(new BorderLayout());
         chatMessage.setBorder(new EmptyBorder(15, 15, 15, 15));
 
         JLabel usernameLabel = new JLabel(message.getUser() + ":");
         usernameLabel.setFont(new Font("Inter", Font.BOLD, 18));
         usernameLabel.setForeground(Utilities.TEXT_COLOR);
-        chatMessage.add(usernameLabel);
+        chatMessage.add(usernameLabel, BorderLayout.NORTH);
 
-        JLabel messageLabel = new JLabel(message.getMessage());
-        messageLabel.setFont(new Font("Inter", Font.PLAIN, 16));
-        messageLabel.setForeground(Utilities.TEXT_COLOR);
-        chatMessage.add(messageLabel);
+        JTextArea messageArea = new JTextArea(message.getMessage());
+        messageArea.setWrapStyleWord(true);
+        messageArea.setLineWrap(true);
+        messageArea.setEditable(false);
+        messageArea.setBackground(Utilities.TRANSPARENT_COLOR);
+        messageArea.setForeground(Utilities.TEXT_COLOR);
+        messageArea.setFont(new Font("Inter", Font.PLAIN, 16));
+        messageArea.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        chatMessage.add(messageArea, BorderLayout.CENTER);
 
         return chatMessage;
     }
@@ -130,6 +157,8 @@ public class ClientGUI extends JFrame implements MessageListener {
         messagePanel.add(createChatMessageComponent(message));
         revalidate();
         repaint();
+
+        scrollPane.getVerticalScrollBar().setValue(Integer.MAX_VALUE);
     }
 
     @Override
@@ -152,6 +181,11 @@ public class ClientGUI extends JFrame implements MessageListener {
         }
 
         connectedUsersPanel.add(userListPanel);
+        revalidate();
+        repaint();
+    }
+
+    private void updateMessageSize() {
         revalidate();
         repaint();
     }
