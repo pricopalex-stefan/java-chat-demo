@@ -1,4 +1,4 @@
-FROM maven:3.9.11-eclipse-temurin-24-jammy as build
+FROM maven:3.9.11-eclipse-temurin-25 as build
 COPY . .
 RUN mvn clean package -DskipTests
 
