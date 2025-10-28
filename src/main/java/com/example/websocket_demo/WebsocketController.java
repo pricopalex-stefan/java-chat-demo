@@ -16,7 +16,7 @@ public class WebsocketController {
         this.sessionManager = sessionManager;
     }
 
-    // handles incoming chat messages from clients sent to /app/messages
+    // handles incoming chat messages from clients sent to "/app/messages"
     @MessageMapping("/messages")
     public void handleMessage(Message message) {
         System.out.println("Received message from user: " + message.getUser() + ": " + message.getMessage());
@@ -24,7 +24,7 @@ public class WebsocketController {
         System.out.println("Sent message to /topic/messages: " + message.getUser() + ": " + message.getMessage());
     }
 
-    // called when a users connects -> adds username to active users list and broadcasts it
+    // called when a users connect -> adds username to active users list and notifies all connected clients
     @MessageMapping("/connect")
     public void connectUser(String username){
         sessionManager.addUsername(username);
@@ -32,11 +32,20 @@ public class WebsocketController {
         System.out.println(username + " connected");
     }
 
-    // called when a users disconnects -> removes username from active users list and broadcasts it
+    // called when a users disconnect -> removes username from active users list and notifies all connected clients
     @MessageMapping("/disconnect")
     public void disconnectUser(String username){
         sessionManager.removeUsername(username);
         sessionManager.broadcastActiveUsers();
         System.out.println(username + " disconnected");
+    }
+
+    /*
+    * called after a new client subscribes to the users topic
+    * so it ensures the new client receives the list of active users
+    */
+    @MessageMapping("/request-users")
+    public void requestUsers(){
+        sessionManager.broadcastActiveUsers();
     }
 }

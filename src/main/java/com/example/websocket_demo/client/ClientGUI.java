@@ -7,16 +7,19 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
-public class ClientGUI extends JFrame {
+public class ClientGUI extends JFrame implements MessageListener {
     private JPanel connectedUsersPanel, messagePanel;
+    private MyStompClient myStompClient;
+    private String username;
 
-    public ClientGUI(String username) {
+    public ClientGUI(String username) throws ExecutionException, InterruptedException {
         super("User " + username);
+        this.username = username;
+        myStompClient = new MyStompClient(this, username);
 
         setSize(1280, 860);
         setLocationRelativeTo(null);
@@ -28,6 +31,7 @@ public class ClientGUI extends JFrame {
                 int option = JOptionPane.showConfirmDialog(ClientGUI.this, "Quit?",
                         "Exit app", JOptionPane.YES_NO_OPTION);
                 if (option == JOptionPane.YES_OPTION) {
+                    myStompClient.disconnectUser(username);
                     ClientGUI.this.dispose();
                 }
             }
@@ -87,10 +91,7 @@ public class ClientGUI extends JFrame {
 
                     inputField.setText("");
 
-                    messagePanel.add(createChatMessageComponent(new Message("Alex", input)));
-
-                    repaint();
-                    revalidate();
+                    myStompClient.sendMessage(new Message(username, input));
                 }
             }
         });
@@ -122,5 +123,36 @@ public class ClientGUI extends JFrame {
         chatMessage.add(messageLabel);
 
         return chatMessage;
+    }
+
+    @Override
+    public void onMessageReceived(Message message) {
+        messagePanel.add(createChatMessageComponent(message));
+        revalidate();
+        repaint();
+    }
+
+    @Override
+    public void onActiveUsersUpdated(ArrayList<String> users) {
+        // remove the current user list panel
+        if(connectedUsersPanel.getComponentCount() >= 2) {
+            connectedUsersPanel.remove(1);
+        }
+
+        JPanel userListPanel = new JPanel();
+        userListPanel.setBackground(Utilities.TRANSPARENT_COLOR);
+        userListPanel.setLayout(new BoxLayout(userListPanel, BoxLayout.Y_AXIS));
+
+        for(String user : users) {
+            JLabel userLabel = new JLabel();
+            userLabel.setText(user);
+            userLabel.setForeground(Utilities.TEXT_COLOR);
+            userLabel.setFont(new Font("Inter", Font.BOLD, 16));
+            userListPanel.add(userLabel);
+        }
+
+        connectedUsersPanel.add(userListPanel);
+        revalidate();
+        repaint();
     }
 }

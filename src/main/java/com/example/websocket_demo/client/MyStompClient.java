@@ -20,7 +20,7 @@ public class MyStompClient {
     private String username;
 
     // Initializing STOMP client to communicate with the server using WebSocket / SockJS
-    public MyStompClient(String username) throws ExecutionException, InterruptedException {
+    public MyStompClient(MessageListener messageListener, String username) throws ExecutionException, InterruptedException {
         this.username = username;
 
         List<Transport> transports = new ArrayList<>();
@@ -32,7 +32,7 @@ public class MyStompClient {
 
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-        StompSessionHandler stompSessionHandler = new MyStompSessionHandler(username);
+        StompSessionHandler stompSessionHandler = new MyStompSessionHandler(messageListener, username);
         String url = "ws://localhost:8080/websocket";
 
         session = stompClient.connectAsync(url, stompSessionHandler).get();
